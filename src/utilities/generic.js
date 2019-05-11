@@ -11,7 +11,8 @@ function fetchItemFromArrayWithKey (array = [], key = '', value) {
 
 // return a random number between 1 & 6
 function getDiceRollNumber () {
-  return 2
+  let val = Math.round(Math.random()*6)
+  return val ? val : 6 // to prevent chances of 0 & 6 from becoming half that of others (1 ... 5)
 }
 
 function getNextPosition (currentPosition, homeId) {
