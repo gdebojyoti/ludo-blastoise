@@ -24,7 +24,7 @@ class Match {
   }
 
   // set first turn to be first player
-  initializeFirstTurn () {
+  setFirstTurn () {
     if (this.currentTurn === 0) {
       this.currentTurn = this.turns[0]
     }
@@ -34,6 +34,10 @@ class Match {
   updateTurn () {
     const currentIndex = this.turns.indexOf(this.currentTurn)
     this.currentTurn = this.turns[(currentIndex + 1) % this.turns.length]
+  }
+
+  playerMovesCoin (playerId, coinId, roll) {
+    this.players[playerId].moveCoin(coinId, roll)
   }
 }
 

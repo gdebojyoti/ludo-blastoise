@@ -8,11 +8,15 @@ class Player {
 
     const homeId = ['red', 'blue', 'yellow', 'green'].indexOf(home) + 1
     this.coins = {
-      alfa: `${homeId}01`,
-      beta: `${homeId}02`,
-      charlie: `${homeId}03`,
-      delta: `${homeId}04`
+      alfa: homeId * 100 + 1,
+      beta: homeId * 100 + 2,
+      charlie: homeId * 100 + 3,
+      delta: homeId * 100 + 4
     }
+  }
+
+  moveCoin (coinId, roll) {
+    this.coins[coinId] += roll
   }
 }
 

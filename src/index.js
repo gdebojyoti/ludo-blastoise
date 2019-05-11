@@ -1,6 +1,7 @@
 const io = require('socket.io')()
 
 const Match = require('./models/Match')
+const { getDiceRollNumber } = require('./utilities/generic')
 
 const matches = []
 const matchId = 'M31291' // some random match ID
@@ -11,18 +12,8 @@ io.on('connection', (client) => {
   console.log("new connection...", client.id)
   const match = matches[matchId]
   let playerId = 'noname'
-  let coinPosition = 100
-
-  const temp = {}
 
   client.join(matchId)
-
-  client.on('subscribeToTimer', (interval) => {
-    console.log('client is subscribing to timer with interval ', interval)
-    setInterval(() => {
-      client.emit('timer', new Date())
-    }, interval)
-  })
 
   // when a new player joins, inform everyone
   client.on('JOIN_MATCH', ({ name, home }) => {
@@ -32,25 +23,35 @@ io.on('connection', (client) => {
       return
     }
 
-    // ignore if player already exists in current match
+    // if player already exists in current match
     if (match.checkForPlayer(playerId)) {
+      // send all latest match data to player
+      client.emit('LATEST_MATCH_DATA', {
+        playerId,
+        players: match.players,
+        matchId,
+        name,
+        home
+      })
+
+      // exit
       return
     }
 
     // add player to current match
     match.addPlayer(playerId, name, home)
 
-    match.initializeFirstTurn()
+    match.setFirstTurn()
 
     console.log(playerId, "has joined", home)
-    console.log("match details", match)
     
-    // send details to joined player
-    client.emit('CLIENT_JOINED', {
-      id: playerId,
+    // send all latest match data to player
+    client.emit('LATEST_MATCH_DATA', {
+      playerId,
+      players: match.players,
+      matchId,
       name,
-      home,
-      matchId
+      home
     })
 
     // send new joinee details to others
@@ -60,16 +61,33 @@ io.on('connection', (client) => {
       name,
       home
     })
-
-    // test; update 'beta' coin position every 2 secs
-    temp.interval = setInterval(() => {
-      io.in(matchId).emit('UPDATE_COIN_POSITION', {
-        playerId,
-        coinId: 'beta',
-        position: ++coinPosition
-      })
-    }, 5000)
   })
+
+  // when client requests to roll dice
+  client.on('TRIGGER_DICE_ROLL', ({ coinId }) => {
+    const roll = getDiceRollNumber()
+
+    io.in(matchId).emit('DICE_ROLLED', {
+      playerId,
+      roll
+    })
+
+    console.log(match)
+
+    match.playerMovesCoin(playerId, coinId, roll)
+
+    const coinPosition = match.players[playerId].coins[coinId]
+    io.in(matchId).emit('UPDATE_COIN_POSITION', {
+      playerId,
+      coinId,
+      coinPosition,
+      roll
+    })
+
+    console.log("rolling dice... coin moves to", coinPosition)
+  })
+
+  client.on('COIN_SELECTED', data => {})
 
   // when a player disconnects, inform others
   client.on('disconnect', function () {
@@ -77,9 +95,6 @@ io.on('connection', (client) => {
     client.in(matchId).emit('PLAYER_LEFT', {
       playerId
     })
-
-    // temp; delete interval when player disconnects
-    clearInterval(temp.interval)
   })
 })
 
