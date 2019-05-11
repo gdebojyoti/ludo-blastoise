@@ -1,12 +1,16 @@
 const io = require('socket.io')()
 
+const Match = require('./models/Match')
+
 const matches = []
 const matchId = 'M31291' // some random match ID
-let playersCount = 0 // number of players joined since last server restart
+
+matches[matchId] = new Match()
 
 io.on('connection', (client) => {
   console.log("new connection...", client.id)
-  const playerId = ++playersCount
+  const match = matches[matchId]
+  let playerId = 'noname'
   let coinPosition = 100
 
   const temp = {}
@@ -22,11 +26,28 @@ io.on('connection', (client) => {
 
   // when a new player joins, inform everyone
   client.on('JOIN_MATCH', ({ name, home }) => {
-    console.log(name, playerId, "has joined", home)
+    // TODO: name is being used as player ID for now; rectify this; playerId should be unique
+    playerId = name
+    if (!name) {
+      return
+    }
+
+    // ignore if player already exists in current match
+    if (match.checkForPlayer(playerId)) {
+      return
+    }
+
+    // add player to current match
+    match.addPlayer(playerId, name, home)
+
+    match.initializeFirstTurn()
+
+    console.log(playerId, "has joined", home)
+    console.log("match details", match)
     
     // send details to joined player
     client.emit('CLIENT_JOINED', {
-      id: `P${playerId}`,
+      id: playerId,
       name,
       home,
       matchId
@@ -35,7 +56,7 @@ io.on('connection', (client) => {
     // send new joinee details to others
     client.to(matchId).emit('PLAYER_JOINED', {
       matchId,
-      id: `P${playerId}`,
+      id: playerId,
       name,
       home
     })
@@ -43,7 +64,7 @@ io.on('connection', (client) => {
     // test; update 'beta' coin position every 2 secs
     temp.interval = setInterval(() => {
       io.in(matchId).emit('UPDATE_COIN_POSITION', {
-        playerId: `P${playerId}`,
+        playerId,
         coinId: 'beta',
         position: ++coinPosition
       })
@@ -54,7 +75,7 @@ io.on('connection', (client) => {
   client.on('disconnect', function () {
     console.log(playerId, "has left")
     client.in(matchId).emit('PLAYER_LEFT', {
-      playerId: `P${playerId}`
+      playerId
     })
 
     // temp; delete interval when player disconnects
