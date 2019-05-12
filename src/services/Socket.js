@@ -20,12 +20,13 @@ function _onConnection (client) {
   let playerName = 'noname'
   let roll = 0 // spaces by which a coin will move
 
+  // add client to room (room = match; uniquely identified by match ID)
   client.join(matchId)
 
   // when a new player joins, inform everyone
   client.on('JOIN_MATCH', ({ name, home }) => {
     // TODO: name is being used as player ID for now; rectify this; playerId should be unique
-    playerId = name
+    playerId = name // ID of current player (client)
     playerName = name
     if (!name) {
       return
@@ -49,8 +50,6 @@ function _onConnection (client) {
     // add player to current match
     match.addPlayer(playerId, name, home)
 
-    match.setFirstTurn()
-
     console.log(playerId, 'has joined', home)
 
     // send all latest match data to player
@@ -73,6 +72,11 @@ function _onConnection (client) {
 
   // when client requests to roll dice
   client.on('TRIGGER_DICE_ROLL', () => {
+    // exit if it is not client's turn
+    if (!match.checkIfPlayersTurn(playerId)) {
+      return
+    }
+
     roll = getDiceRollNumber()
 
     io.in(matchId).emit('DICE_ROLLED', {
@@ -82,7 +86,13 @@ function _onConnection (client) {
     })
   })
 
+  // when client selects the coin they want to move
   client.on('COIN_SELECTED', ({ coinId }) => {
+    // exit if it is not client's turn
+    if (!match.checkIfPlayersTurn(playerId)) {
+      return
+    }
+
     const coinPath = match.getCoinPath(playerId, coinId, roll)
 
     // choice of coin is invalid if moves count = 0
@@ -104,6 +114,10 @@ function _onConnection (client) {
     roll = 0
 
     console.log('rolling dice... coin moves to', coinPosition)
+
+    io.in(matchId).emit('SET_NEXT_TURN', {
+      playerId: match.getNextTurn()
+    })
   })
 
   // when a player disconnects, inform others

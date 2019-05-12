@@ -16,6 +16,22 @@ class Player {
     }
   }
 
+  getName () {
+    return this.name
+  }
+
+  getHome () {
+    return this.home
+  }
+
+  getDetails () {
+    return {
+      name: this.name,
+      home: this.home,
+      status: this.status
+    }
+  }
+
   // list of positions that a coin will pass through to complete its move
   getCoinPath (coinId, roll) {
     let position = this.coins[coinId]
