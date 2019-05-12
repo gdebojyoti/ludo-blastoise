@@ -38,12 +38,7 @@ function getNextPosition (currentPosition, homeId) {
     }
   } else if (remaining === 20) {
     nextPosition = quadrantId * 100 + 99
-  } else {
-    // stay in same position if all else fails
-    nextPosition = currentPosition
   }
-
-  console.log("nextPosition", nextPosition, quadrantId)
 
   return nextPosition
 }

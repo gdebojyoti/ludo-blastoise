@@ -36,8 +36,16 @@ class Match {
     this.currentTurn = this.turns[(currentIndex + 1) % this.turns.length]
   }
 
-  playerMovesCoin (playerId, coinId, roll) {
-    this.players[playerId].moveCoin(coinId, roll)
+  getCoinPath (playerId, coinId, roll) {
+    return this.players[playerId].getCoinPath(coinId, roll)
+  }
+
+  playerMovesCoin (playerId, coinId, moves) {
+    if (!moves.length) {
+      console.warn("WARNING: No moves found")
+      return
+    }
+    this.players[playerId].updateCoinPosition(coinId, moves.slice(-1)[0])
   }
 }
 

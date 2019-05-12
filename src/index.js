@@ -11,7 +11,9 @@ matches[matchId] = new Match()
 io.on('connection', (client) => {
   console.log("new connection...", client.id)
   const match = matches[matchId]
-  let playerId = 'noname'
+  let playerId = 'noid'
+  let playerName = 'noname'
+  let roll = 0 // spaces by which a coin will move
 
   client.join(matchId)
 
@@ -19,6 +21,7 @@ io.on('connection', (client) => {
   client.on('JOIN_MATCH', ({ name, home }) => {
     // TODO: name is being used as player ID for now; rectify this; playerId should be unique
     playerId = name
+    playerName = name
     if (!name) {
       return
     }
@@ -64,30 +67,39 @@ io.on('connection', (client) => {
   })
 
   // when client requests to roll dice
-  client.on('TRIGGER_DICE_ROLL', ({ coinId }) => {
-    const roll = getDiceRollNumber()
+  client.on('TRIGGER_DICE_ROLL', () => {
+    roll = getDiceRollNumber()
 
     io.in(matchId).emit('DICE_ROLLED', {
       playerId,
+      name: playerName,
       roll
     })
+  })
 
-    console.log(match)
+  client.on('COIN_SELECTED', ({ coinId }) => {
+    const coinPath = match.getCoinPath(playerId, coinId, roll)
 
-    match.playerMovesCoin(playerId, coinId, roll)
+    // choice of coin is invalid if moves count = 0
+    if (!coinPath.length) {
+      return
+    }
+
+    match.playerMovesCoin(playerId, coinId, coinPath)
 
     const coinPosition = match.players[playerId].coins[coinId]
-    io.in(matchId).emit('UPDATE_COIN_POSITION', {
+    io.in(matchId).emit('COIN_POSITION_UPDATED', {
       playerId,
       coinId,
       coinPosition,
-      roll
+      coinPath
     })
+
+    // reset roll value
+    roll = 0
 
     console.log("rolling dice... coin moves to", coinPosition)
   })
-
-  client.on('COIN_SELECTED', data => {})
 
   // when a player disconnects, inform others
   client.on('disconnect', function () {
