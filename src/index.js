@@ -1,4 +1,11 @@
-const io = require('socket.io')()
+let io
+
+module.exports = function(server, data) {
+  io = require('socket.io')(server)
+  io.on('connection', _onConnection)
+
+  mapData = data;
+}
 
 const Match = require('./models/Match')
 const { getDiceRollNumber } = require('./utilities/generic')
@@ -8,7 +15,7 @@ const matchId = 'M31291' // some random match ID
 
 matches[matchId] = new Match()
 
-io.on('connection', (client) => {
+function _onConnection (client) {
   console.log("new connection...", client.id)
   const match = matches[matchId]
   let playerId = 'noid'
@@ -108,8 +115,4 @@ io.on('connection', (client) => {
       playerId
     })
   })
-})
-
-const port = 8000
-io.listen(port)
-console.log('listening on port ', port)
+}
