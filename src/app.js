@@ -12,6 +12,6 @@
     .use((req, res) => res.sendFile(INDEX) )
     .listen(PORT, () => console.log(`Listening on ${ PORT }`));
   
-  require('./index.js')(server);
+  require('./services/Socket.js')(server);
   
   })();

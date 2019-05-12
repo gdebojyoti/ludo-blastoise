@@ -7,8 +7,8 @@ module.exports = function(server, data) {
   mapData = data;
 }
 
-const Match = require('./models/Match')
-const { getDiceRollNumber } = require('./utilities/generic')
+const Match = require('../models/Match')
+const { getDiceRollNumber } = require('../utilities/generic')
 
 const matches = []
 const matchId = 'M31291' // some random match ID
