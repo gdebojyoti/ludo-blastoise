@@ -6,7 +6,6 @@ module.exports = function (server) {
 }
 
 const Match = require('../models/Match')
-const { getDiceRollNumber } = require('../utilities/generic')
 
 const matches = []
 const matchId = 'M31291' // some random match ID
@@ -18,7 +17,6 @@ function _onConnection (client) {
   const match = matches[matchId]
   let playerId = 'noid'
   let playerName = 'noname'
-  let roll = 0 // spaces by which a coin will move
 
   // add client to room (room = match; uniquely identified by match ID)
   client.join(matchId)
@@ -77,13 +75,13 @@ function _onConnection (client) {
       return
     }
 
-    roll = getDiceRollNumber()
-
     io.in(matchId).emit('DICE_ROLLED', {
       playerId,
       name: playerName,
-      roll
+      roll: match.getDiceRollNumber()
     })
+
+    // TODO: stop user from rolling again and again
   })
 
   // when client selects the coin they want to move
@@ -93,7 +91,7 @@ function _onConnection (client) {
       return
     }
 
-    const coinPath = match.getCoinPath(playerId, coinId, roll)
+    const coinPath = match.getCoinPath(playerId, coinId)
 
     // choice of coin is invalid if moves count = 0
     if (!coinPath.length) {
@@ -109,9 +107,6 @@ function _onConnection (client) {
       coinPosition,
       coinPath
     })
-
-    // reset roll value
-    roll = 0
 
     console.log('rolling dice... coin moves to', coinPosition)
 

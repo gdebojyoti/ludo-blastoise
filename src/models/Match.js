@@ -1,5 +1,6 @@
 const Player = require('./Player')
 const matchStatus = require('../constants/matchStatus')
+const { getDiceRollNumber } = require('../utilities/generic')
 
 class Match {
   constructor () {
@@ -7,11 +8,11 @@ class Match {
     this.turns = [] // list of player IDs in order of their turn (red -> blue -> yellow -> green)
     this.currentTurn = 0
     this.status = matchStatus.PREMATCH
+    this.lastRoll = 0 // value of previous dice roll; roll = spaces by which a coin will move
     // this.hostPlayerId = ''
-    // this.lastRoll = 0 // value of previous dice roll
   }
 
-  // return true if player ID ('id') is found in 'turns'
+  // check if player exists in match; return true if player ID ('id') is found in 'turns'
   checkForPlayer (id) {
     return this.turns.indexOf(id) >= 0
   }
@@ -49,7 +50,10 @@ class Match {
 
   // update and return next player's turn
   getNextTurn () {
-    // TODO: conditions to continue turn for same player (eg: rolling a 6)
+    // continue turn for same player if they rolled a 6
+    if (this.lastRoll === 6) {
+      return this.currentTurn
+    }
 
     const currentIndex = this.turns.indexOf(this.currentTurn)
     this.currentTurn = this.turns[(currentIndex + 1) % this.turns.length]
@@ -57,8 +61,13 @@ class Match {
     return this.currentTurn
   }
 
-  getCoinPath (playerId, coinId, roll) {
-    return this.players[playerId].getCoinPath(coinId, roll)
+  getDiceRollNumber () {
+    this.lastRoll = getDiceRollNumber()
+    return this.lastRoll
+  }
+
+  getCoinPath (playerId, coinId) {
+    return this.players[playerId].getCoinPath(coinId, this.lastRoll)
   }
 
   playerMovesCoin (playerId, coinId, moves) {
