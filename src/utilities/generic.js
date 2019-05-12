@@ -11,8 +11,7 @@ function fetchItemFromArrayWithKey (array = [], key = '', value) {
 
 // return a random number between 1 & 6
 function getDiceRollNumber () {
-  let val = Math.round(Math.random()*6)
-  return val ? val : 6 // to prevent chances of 0 & 6 from becoming half that of others (1 ... 5)
+  return Math.round(Math.random() * 6) || 6 // to prevent chances of 0 & 6 from becoming half that of others (1 ... 5)
 }
 
 function getNextPosition (currentPosition, homeId) {
@@ -22,7 +21,7 @@ function getNextPosition (currentPosition, homeId) {
   const remaining = currentPosition % 100
 
   let nextPosition = 0
-  
+
   if (remaining >= 10 && remaining < 15) {
     nextPosition = currentPosition + 1
   } else if (remaining === 15) {

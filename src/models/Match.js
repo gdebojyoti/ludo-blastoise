@@ -19,7 +19,7 @@ class Match {
     this.turns.push(id)
     // create entry for player in 'players' list
     this.players[id] = new Player(name, home)
-    console.log("new player added ---")
+    console.log('new player added ---')
     console.log(this.players[id])
   }
 
@@ -42,7 +42,7 @@ class Match {
 
   playerMovesCoin (playerId, coinId, moves) {
     if (!moves.length) {
-      console.warn("WARNING: No moves found")
+      console.warn('WARNING: No moves found')
       return
     }
     this.players[playerId].updateCoinPosition(coinId, moves.slice(-1)[0])

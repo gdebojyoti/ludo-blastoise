@@ -1,10 +1,8 @@
 let io
 
-module.exports = function(server, data) {
+module.exports = function (server) {
   io = require('socket.io')(server)
   io.on('connection', _onConnection)
-
-  mapData = data;
 }
 
 const Match = require('../models/Match')
@@ -16,7 +14,7 @@ const matchId = 'M31291' // some random match ID
 matches[matchId] = new Match()
 
 function _onConnection (client) {
-  console.log("new connection...", client.id)
+  console.log('new connection...', client.id)
   const match = matches[matchId]
   let playerId = 'noid'
   let playerName = 'noname'
@@ -53,8 +51,8 @@ function _onConnection (client) {
 
     match.setFirstTurn()
 
-    console.log(playerId, "has joined", home)
-    
+    console.log(playerId, 'has joined', home)
+
     // send all latest match data to player
     client.emit('LATEST_MATCH_DATA', {
       playerId,
@@ -105,12 +103,12 @@ function _onConnection (client) {
     // reset roll value
     roll = 0
 
-    console.log("rolling dice... coin moves to", coinPosition)
+    console.log('rolling dice... coin moves to', coinPosition)
   })
 
   // when a player disconnects, inform others
   client.on('disconnect', function () {
-    console.log(playerId, "has left")
+    console.log(playerId, 'has left')
     client.in(matchId).emit('PLAYER_LEFT', {
       playerId
     })

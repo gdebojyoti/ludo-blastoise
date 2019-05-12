@@ -1,17 +1,15 @@
-(function() {
+(function () {
+  'use strict'
 
-  "use strict";
-  
-  const express = require('express');
-  const path = require('path');
-  
-  const PORT = process.env.PORT || 8000;
-  const INDEX = path.join(__dirname, 'index.html');
+  const express = require('express')
+  const path = require('path')
+
+  const PORT = process.env.PORT || 8000
+  const INDEX = path.join(__dirname, 'index.html')
 
   const server = express()
-    .use((req, res) => res.sendFile(INDEX) )
-    .listen(PORT, () => console.log(`Listening on ${ PORT }`));
-  
-  require('./services/Socket.js')(server);
-  
-  })();
+    .use((req, res) => res.sendFile(INDEX))
+    .listen(PORT, () => console.log(`Listening on ${PORT}`))
+
+  require('./services/Socket.js')(server)
+})()
