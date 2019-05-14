@@ -8,7 +8,8 @@ const { getDiceRollNumber, getHomeId, getCoinIndex } = require('../utilities/gen
 
 let cells = {}
 const players = {} // list of all players in this match
-// let hostPlayerId = ''
+let _didEatEnemyCoin = false // becomes true if the player just ate an enemy coin
+// let _hostPlayerId = ''
 
 /*
  * Class & Public methods
@@ -75,6 +76,12 @@ class Match {
 
   // update and return next player's turn
   getNextTurn () {
+    // continue turn for same player if they just ate an enemy coin
+    if (_didEatEnemyCoin) {
+      _didEatEnemyCoin = false // reset flag
+      return this.currentTurn
+    }
+
     // continue turn for same player if they rolled a 6
     if (this.lastRoll === 6) {
       return this.currentTurn
@@ -125,9 +132,14 @@ class Match {
     if (enemyCoin) {
       // remove enemy coin
       _eatEnemyCoin(enemyCoin, position)
+
       // update enemy coin's position
       const { playerId, coinId } = enemyCoin
       players[playerId].updateCoinPosition(coinId, _getCoinHomePosition(playerId, coinId))
+
+      // update status
+      _didEatEnemyCoin = true
+
       return enemyCoin
     }
 
