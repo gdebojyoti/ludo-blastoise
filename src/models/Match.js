@@ -9,6 +9,7 @@ class Match {
     this.currentTurn = 0
     this.status = matchStatus.PREMATCH
     this.lastRoll = 0 // value of previous dice roll; roll = spaces by which a coin will move
+    this.isDiceRolled = false // whether or not current player already rolled the dice; prevents multiple dice rolls
     // this.hostPlayerId = ''
   }
 
@@ -81,6 +82,16 @@ class Match {
   // check if it is playerId's turn
   checkIfPlayersTurn (playerId) {
     return playerId === this.currentTurn
+  }
+
+  // check if current player has already rolled the dice
+  hasAlreadyRolled () {
+    return this.isDiceRolled
+  }
+
+  // update dice rolled status
+  setDiceRolled (state) {
+    this.isDiceRolled = state
   }
 }
 

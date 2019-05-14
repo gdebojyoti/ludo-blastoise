@@ -75,13 +75,19 @@ function _onConnection (client) {
       return
     }
 
+    // exit if client has already rolled dice
+    if (match.hasAlreadyRolled()) {
+      return
+    }
+
     io.in(matchId).emit('DICE_ROLLED', {
       playerId,
       name: playerName,
       roll: match.getDiceRollNumber()
     })
 
-    // TODO: stop user from rolling again and again
+    // trigger dice rolled status; stops client from rolling again and again
+    match.setDiceRolled(true)
   })
 
   // when client selects the coin they want to move
@@ -108,7 +114,8 @@ function _onConnection (client) {
       coinPath
     })
 
-    console.log('rolling dice... coin moves to', coinPosition)
+    // reset dice rolled status to false (allow dice to be rolled again)
+    match.setDiceRolled(false)
 
     io.in(matchId).emit('SET_NEXT_TURN', {
       playerId: match.getNextTurn()
