@@ -2,8 +2,17 @@ const Player = require('./Player')
 const matchStatus = require('../constants/matchStatus')
 const { getDiceRollNumber, getHomeId, getCoinIndex } = require('../utilities/generic')
 
+/*
+ * Private members
+ */
+
 let cells = {}
 const players = {} // list of all players in this match
+// let hostPlayerId = ''
+
+/*
+ * Class & Public methods
+ */
 
 class Match {
   constructor () {
@@ -12,7 +21,6 @@ class Match {
     this.status = matchStatus.PREMATCH
     this.lastRoll = 0 // value of previous dice roll; roll = spaces by which a coin will move
     this.isDiceRolled = false // whether or not current player already rolled the dice; prevents multiple dice rolls
-    // this.hostPlayerId = ''
   }
 
   getAllPlayers () {
@@ -26,10 +34,7 @@ class Match {
 
   // home position of coin; eg: red alfa = 101, green charlie = 403
   getCoinHomePosition (playerId, coinId) {
-    const home = players[playerId].getHome()
-    const homeId = getHomeId(home)
-
-    return 100 * homeId + getCoinIndex(coinId)
+    return _getCoinHomePosition(playerId, coinId)
   }
 
   // check if player exists in match; return true if player ID ('id') is found in 'turns'
@@ -100,13 +105,13 @@ class Match {
     const currentPosition = players[playerId].getCoinPosition(coinId)
 
     // remove coin from above position in 'coinPositions'
-    removeCoinFromCell(currentPosition, playerId, coinId)
+    _removeCoinFromCell(currentPosition, playerId, coinId)
 
     // calculate new position
     const newPosition = moves.slice(-1)[0]
 
     // add coin to new position
-    addCoinToCell(newPosition, playerId, coinId)
+    _addCoinToCell(newPosition, playerId, coinId)
 
     console.log('cells', cells)
 
@@ -116,13 +121,13 @@ class Match {
   // try to eat enemy coin; if eaten, return coin details
   didEatEnemyCoin (position, playerId, coinId) {
     // check if enemy coin exists
-    const enemyCoin = detectEnemyCoin(position, playerId, coinId)
+    const enemyCoin = _detectEnemyCoin(position, playerId, coinId)
     if (enemyCoin) {
       // remove enemy coin
-      eatEnemyCoin(enemyCoin, position, this.getCoinHomePosition)
+      _eatEnemyCoin(enemyCoin, position)
       // update enemy coin's position
       const { playerId, coinId } = enemyCoin
-      players[playerId].updateCoinPosition(coinId, this.getCoinHomePosition(playerId, coinId))
+      players[playerId].updateCoinPosition(coinId, _getCoinHomePosition(playerId, coinId))
       return enemyCoin
     }
 
@@ -145,22 +150,26 @@ class Match {
   }
 }
 
-function removeCoinFromCell (cellId, playerId, coinId) {
+/*
+ * Private methods
+ */
+
+function _removeCoinFromCell (cellId, playerId, coinId) {
   if (!cells[cellId] || !cells[cellId].length) {
     return
   }
 
-  const coinIndex = getCoinIndexInCell(cellId, playerId, coinId)
+  const coinIndex = _getCoinIndexInCell(cellId, playerId, coinId)
 
   coinIndex > -1 && cells[cellId].splice(coinIndex, 1)
 }
 
-function addCoinToCell (cellId, playerId, coinId) {
+function _addCoinToCell (cellId, playerId, coinId) {
   if (!cells[cellId]) {
     cells[cellId] = []
   }
 
-  const coinIndex = getCoinIndexInCell(cellId, playerId, coinId)
+  const coinIndex = _getCoinIndexInCell(cellId, playerId, coinId)
 
   coinIndex === -1 && cells[cellId].push({
     playerId,
@@ -169,23 +178,23 @@ function addCoinToCell (cellId, playerId, coinId) {
 }
 
 // check if enemy coins exist in given position; if so, return the first coin
-function detectEnemyCoin (cellId, playerId) {
+function _detectEnemyCoin (cellId, playerId) {
   const enemyCoins = cells[cellId].filter(coin => coin.playerId !== playerId)
   return enemyCoins[0]
 }
 
 // move enemy coin from its current position to home position
-function eatEnemyCoin (coin, cellId, getCoinHomePosition) {
+function _eatEnemyCoin (coin, cellId) {
   console.log('enemy coin', coin, cellId)
   const { playerId, coinId } = coin
   // remove enemy coin from current position
-  removeCoinFromCell(cellId, playerId, coinId)
+  _removeCoinFromCell(cellId, playerId, coinId)
   // add enemy coin to home position
-  const homePosition = getCoinHomePosition(playerId, coinId)
-  addCoinToCell(homePosition, playerId, coinId)
+  const homePosition = _getCoinHomePosition(playerId, coinId)
+  _addCoinToCell(homePosition, playerId, coinId)
 }
 
-function getCoinIndexInCell (cellId, playerId, coinId) {
+function _getCoinIndexInCell (cellId, playerId, coinId) {
   let coinIndex = -1
   cells[cellId].forEach((coin, index) => {
     if (coinIndex === -1 && coin.playerId === playerId && coin.coinId === coinId) {
@@ -193,6 +202,13 @@ function getCoinIndexInCell (cellId, playerId, coinId) {
     }
   })
   return coinIndex
+}
+
+function _getCoinHomePosition (playerId, coinId) {
+  const home = players[playerId].getHome()
+  const homeId = getHomeId(home)
+
+  return 100 * homeId + getCoinIndex(coinId)
 }
 
 module.exports = Match
