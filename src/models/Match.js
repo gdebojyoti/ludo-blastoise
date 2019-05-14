@@ -2,6 +2,8 @@ const Player = require('./Player')
 const matchStatus = require('../constants/matchStatus')
 const { getDiceRollNumber } = require('../utilities/generic')
 
+let cells = {}
+
 class Match {
   constructor () {
     this.players = {}
@@ -62,8 +64,8 @@ class Match {
     return this.currentTurn
   }
 
-  getDiceRollNumber () {
-    this.lastRoll = getDiceRollNumber()
+  getDiceRollNumber (number) {
+    this.lastRoll = number || getDiceRollNumber()
     return this.lastRoll
   }
 
@@ -76,7 +78,22 @@ class Match {
       console.warn('WARNING: No moves found')
       return
     }
-    this.players[playerId].updateCoinPosition(coinId, moves.slice(-1)[0])
+
+    // fetch current position of coin
+    const currentPosition = this.players[playerId].getCoinPosition(coinId)
+
+    // remove coin from above position in 'coinPositions'
+    removeCoinFromCell(currentPosition, playerId, coinId)
+
+    // calculate new position
+    const newPosition = moves.slice(-1)[0]
+
+    // add coin to new position
+    addCoinToCell(newPosition, playerId, coinId)
+
+    console.log('cells', cells)
+
+    this.players[playerId].updateCoinPosition(coinId, newPosition)
   }
 
   // check if it is playerId's turn
@@ -95,8 +112,41 @@ class Match {
   }
 }
 
-const getHomeId = home => {
+function getHomeId (home) {
   return ['red', 'blue', 'yellow', 'green'].indexOf(home) + 1
+}
+
+function removeCoinFromCell (cellId, playerId, coinId) {
+  if (!cells[cellId] || !cells[cellId].length) {
+    return
+  }
+
+  const coinIndex = getCoinIndexInCell(cellId, playerId, coinId)
+
+  coinIndex > -1 && cells[cellId].splice(coinIndex, 1)
+}
+
+function addCoinToCell (cellId, playerId, coinId) {
+  if (!cells[cellId]) {
+    cells[cellId] = []
+  }
+
+  const coinIndex = getCoinIndexInCell(cellId, playerId, coinId)
+
+  coinIndex === -1 && cells[cellId].push({
+    playerId,
+    coinId
+  })
+}
+
+function getCoinIndexInCell (cellId, playerId, coinId) {
+  let coinIndex = -1
+  cells[cellId].forEach((coin, index) => {
+    if (coinIndex === -1 && coin.playerId === playerId && coin.coinId === coinId) {
+      coinIndex = index
+    }
+  })
+  return coinIndex
 }
 
 module.exports = Match

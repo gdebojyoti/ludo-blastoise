@@ -69,7 +69,7 @@ function _onConnection (client) {
   })
 
   // when client requests to roll dice
-  client.on('TRIGGER_DICE_ROLL', () => {
+  client.on('TRIGGER_DICE_ROLL', (number) => {
     // exit if it is not client's turn
     if (!match.checkIfPlayersTurn(playerId)) {
       return
@@ -83,7 +83,7 @@ function _onConnection (client) {
     io.in(matchId).emit('DICE_ROLLED', {
       playerId,
       name: playerName,
-      roll: match.getDiceRollNumber()
+      roll: match.getDiceRollNumber(number)
     })
 
     // trigger dice rolled status; stops client from rolling again and again

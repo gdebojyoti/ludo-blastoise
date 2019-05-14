@@ -32,6 +32,10 @@ class Player {
     }
   }
 
+  getCoinPosition (coinId) {
+    return this.coins[coinId]
+  }
+
   // list of positions that a coin will pass through to complete its move
   getCoinPath (coinId, roll) {
     let position = this.coins[coinId]
