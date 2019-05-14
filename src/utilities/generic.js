@@ -42,8 +42,18 @@ function getNextPosition (currentPosition, homeId) {
   return nextPosition
 }
 
+function getHomeId (home) {
+  return ['red', 'blue', 'yellow', 'green'].indexOf(home) + 1
+}
+
+function getCoinIndex (coinId) {
+  return ['alfa', 'beta', 'charlie', 'delta'].indexOf(coinId) + 1
+}
+
 module.exports = {
   fetchItemFromArrayWithKey,
   getDiceRollNumber,
-  getNextPosition
+  getNextPosition,
+  getHomeId,
+  getCoinIndex
 }

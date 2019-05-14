@@ -35,7 +35,7 @@ function _onConnection (client) {
       // send all latest match data to player
       client.emit('LATEST_MATCH_DATA', {
         playerId,
-        players: match.players,
+        players: match.getAllPlayers(),
         matchId,
         name,
         home
@@ -53,7 +53,7 @@ function _onConnection (client) {
     // send all latest match data to player
     client.emit('LATEST_MATCH_DATA', {
       playerId,
-      players: match.players,
+      players: match.getAllPlayers(),
       matchId,
       name,
       home
@@ -106,13 +106,24 @@ function _onConnection (client) {
 
     match.playerMovesCoin(playerId, coinId, coinPath)
 
-    const coinPosition = match.players[playerId].coins[coinId]
+    const coinPosition = match.getCoinPosition(playerId, coinId)
     io.in(matchId).emit('COIN_POSITION_UPDATED', {
       playerId,
       coinId,
       coinPosition,
       coinPath
     })
+
+    // check if enemy coin was eaten
+    const enemyCoinEaten = match.didEatEnemyCoin(coinPosition, playerId, coinId)
+    if (enemyCoinEaten) {
+      console.log('enemyCoinEaten', enemyCoinEaten)
+      const { playerId, coinId } = enemyCoinEaten
+      io.in(matchId).emit('ENEMY_COIN_EATEN', {
+        coin: enemyCoinEaten,
+        position: match.getCoinHomePosition(playerId, coinId)
+      })
+    }
 
     // reset dice rolled status to false (allow dice to be rolled again)
     match.setDiceRolled(false)
