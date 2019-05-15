@@ -78,6 +78,46 @@ class Player {
   coinReachedEnd (coinId) {
     _completedCoins.indexOf(coinId) === -1 && _completedCoins.push(coinId)
   }
+
+  getPossibleSelections (roll) {
+    const choices = []
+    // get all positions of current player's coins
+    for (const coin in this.coins) {
+      _canCoinBeSelected(this.coins[coin], roll) && choices.push(coin)
+    }
+    return choices
+  }
+}
+
+// can a particular coin (position) be selected for given dice roll
+function _canCoinBeSelected (position, roll) {
+  return !_isCoinStuckAtHome(position, roll) && !_isCoinFinished(position) && !_isCoinStuckNearEnd(position, roll)
+}
+
+// is coin at home cell (X01 ~ X04)
+function _isCoinStuckAtHome (position, roll) {
+  const rem = position % 100
+  return rem >= 1 && rem <= 4 && roll !== 6
+}
+
+// has coin reached the end (X99)
+function _isCoinFinished (position) {
+  return position % 100 === 99
+}
+
+// check if stuck near the end (X20 ~ X25)
+function _isCoinStuckNearEnd (position, roll) {
+  const rem = position % 100
+  if (rem < 20 || rem > 25) {
+    return false
+  }
+
+  // check if rolled number is low enough
+  if (rem - roll > 18) {
+    return false
+  }
+
+  return true
 }
 
 module.exports = Player

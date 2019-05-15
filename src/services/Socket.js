@@ -13,7 +13,7 @@ const matchId = 'M31291' // some random match ID
 matches[matchId] = new Match()
 
 function _onConnection (client) {
-  console.log('new connection...', client.id)
+  // console.log('new connection...', client.id)
   const match = matches[matchId]
   let playerId = 'noid'
   let playerName = 'noname'
@@ -88,6 +88,22 @@ function _onConnection (client) {
 
     // trigger dice rolled status; stops client from rolling again and again
     match.setDiceRolled(true)
+
+    // check if any possible coin selections exist for current player
+    const choices = match.getPossibleSelectionsForPlayer()
+    console.log('choices / selections', choices)
+    // if not, trigger next turn
+    if (!choices.length) {
+      // reset dice rolled status to false (allow dice to be rolled again)
+      match.setDiceRolled(false)
+
+      // set no selection possible
+      match.setNoSelectionPossible()
+
+      io.in(matchId).emit('SET_NEXT_TURN', {
+        playerId: match.getNextTurn()
+      })
+    }
   })
 
   // when client selects the coin they want to move
@@ -117,7 +133,6 @@ function _onConnection (client) {
     // check if enemy coin was eaten
     const enemyCoinEaten = match.didEatEnemyCoin(coinPosition, playerId, coinId)
     if (enemyCoinEaten) {
-      console.log('enemyCoinEaten', enemyCoinEaten)
       const { playerId, coinId } = enemyCoinEaten
       io.in(matchId).emit('ENEMY_COIN_EATEN', {
         coin: enemyCoinEaten,

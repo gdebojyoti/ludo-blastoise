@@ -10,6 +10,7 @@ let cells = {}
 const players = {} // list of all players in this match
 let _didEatEnemyCoin = false // becomes true if the player just ate an enemy coin
 let _coinJustReachedEnd = false // becomes true if a coin just reached end
+let _noSelectionPossible = false // becomes true if the player can not select any of their coins after rolling dice
 // let _hostPlayerId = ''
 
 /*
@@ -37,6 +38,10 @@ class Match {
   // home position of coin; eg: red alfa = 101, green charlie = 403
   getCoinHomePosition (playerId, coinId) {
     return _getCoinHomePosition(playerId, coinId)
+  }
+
+  setNoSelectionPossible () {
+    _noSelectionPossible = true
   }
 
   // check if player exists in match; return true if player ID ('id') is found in 'turns'
@@ -89,9 +94,14 @@ class Match {
       return this.currentTurn
     }
 
-    // continue turn for same player if they rolled a 6
-    if (this.lastRoll === 6) {
+    // continue turn for same player if they rolled a 6, and at least one possible coin could be selected
+    if (this.lastRoll === 6 && !_noSelectionPossible) {
       return this.currentTurn
+    }
+
+    // reset _noSelectionPossible flag to false
+    if (_noSelectionPossible) {
+      _noSelectionPossible = false
     }
 
     const currentIndex = this.turns.indexOf(this.currentTurn)
@@ -175,6 +185,10 @@ class Match {
   // update dice rolled status
   setDiceRolled (state) {
     this.isDiceRolled = state
+  }
+
+  getPossibleSelectionsForPlayer () {
+    return players[this.currentTurn].getPossibleSelections(this.lastRoll)
   }
 }
 
