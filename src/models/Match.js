@@ -137,8 +137,12 @@ class Match {
     players[playerId].coinReachedEnd(coinId)
   }
 
-  // try to eat enemy coin; if eaten, return coin details
+  // try to eat enemy coin if not on a safe cell; if eaten, return coin details
   didEatEnemyCoin (position, playerId, coinId) {
+    if (_isOnSafeCell(position)) {
+      return null
+    }
+
     // check if enemy coin exists
     const enemyCoin = _detectEnemyCoin(position, playerId, coinId)
     if (enemyCoin) {
@@ -233,6 +237,11 @@ function _getCoinHomePosition (playerId, coinId) {
   const homeId = getHomeId(home)
 
   return 100 * homeId + getCoinIndex(coinId)
+}
+
+// determine if given cell is a safe one (eg: 113, 134)
+function _isOnSafeCell (position) {
+  return position % 100 === 13 || position % 100 === 34
 }
 
 module.exports = Match
