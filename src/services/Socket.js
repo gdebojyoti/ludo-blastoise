@@ -154,9 +154,15 @@ function _onConnection (client) {
     // reset dice rolled status to false (allow dice to be rolled again)
     match.setDiceRolled(false)
 
-    io.in(matchId).emit('SET_NEXT_TURN', {
-      playerId: match.getNextTurn()
-    })
+    if (match.isGameOver()) {
+      io.in(matchId).emit('GAME_OVER', {
+        winner: playerId
+      })
+    } else {
+      io.in(matchId).emit('SET_NEXT_TURN', {
+        playerId: match.getNextTurn()
+      })
+    }
   })
 
   // when a player disconnects, inform others

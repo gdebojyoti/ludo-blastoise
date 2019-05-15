@@ -49,6 +49,12 @@ class Match {
     return this.turns.indexOf(id) >= 0
   }
 
+  // declare GAME OVER if current player has all coins at X99
+  isGameOver () {
+    const completedCoins = players[this.currentTurn].getCompletedCoins()
+    return completedCoins.length === 4
+  }
+
   // add new player to match
   addPlayer (id, name, home) {
     // create entry for player in 'players' list
@@ -90,7 +96,7 @@ class Match {
 
     // continue turn for same player if their coin just reached its end
     if (_coinJustReachedEnd) {
-      _coinJustReachedEnd = true
+      _coinJustReachedEnd = false
       return this.currentTurn
     }
 

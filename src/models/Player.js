@@ -11,7 +11,7 @@ class Player {
 
     const homeId = getHomeId(home)
     this.coins = {
-      alfa: homeId * 100 + 34,
+      alfa: homeId * 100 + 1,
       beta: homeId * 100 + 2,
       charlie: homeId * 100 + 3,
       delta: homeId * 100 + 4
@@ -77,6 +77,10 @@ class Player {
 
   coinReachedEnd (coinId) {
     _completedCoins.indexOf(coinId) === -1 && _completedCoins.push(coinId)
+  }
+
+  getCompletedCoins () {
+    return _completedCoins
   }
 
   getPossibleSelections (roll) {
