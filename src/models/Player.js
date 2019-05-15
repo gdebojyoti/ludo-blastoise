@@ -1,5 +1,7 @@
-const { getNextPosition } = require('../utilities/generic')
+const { getNextPosition, getHomeId } = require('../utilities/generic')
 const playerStatus = require('../constants/playerStatus')
+
+const _completedCoins = [] // coins that have reached the end
 
 class Player {
   constructor (name, home) {
@@ -7,7 +9,7 @@ class Player {
     this.home = home
     this.status = playerStatus.LIVE
 
-    const homeId = ['red', 'blue', 'yellow', 'green'].indexOf(home) + 1
+    const homeId = getHomeId(home)
     this.coins = {
       alfa: homeId * 100 + 34,
       beta: homeId * 100 + 2,
@@ -71,6 +73,10 @@ class Player {
 
   updateCoinPosition (coinId, position) {
     this.coins[coinId] = position
+  }
+
+  coinReachedEnd (coinId) {
+    _completedCoins.indexOf(coinId) === -1 && _completedCoins.push(coinId)
   }
 }
 

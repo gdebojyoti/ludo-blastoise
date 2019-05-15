@@ -125,6 +125,17 @@ function _onConnection (client) {
       })
     }
 
+    // check if coin has reached the end; i.e. cell ID is X99 (X = quadrant ID)
+    if (coinPosition % 100 === 99) {
+      // update player's completedCoins
+      match.coinReachedEnd(playerId, coinId)
+      // let everyone know
+      io.in(matchId).emit('COIN_REACHED_END', {
+        playerId,
+        coinId
+      })
+    }
+
     // reset dice rolled status to false (allow dice to be rolled again)
     match.setDiceRolled(false)
 

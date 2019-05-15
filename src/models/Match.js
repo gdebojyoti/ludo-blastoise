@@ -9,6 +9,7 @@ const { getDiceRollNumber, getHomeId, getCoinIndex } = require('../utilities/gen
 let cells = {}
 const players = {} // list of all players in this match
 let _didEatEnemyCoin = false // becomes true if the player just ate an enemy coin
+let _coinJustReachedEnd = false // becomes true if a coin just reached end
 // let _hostPlayerId = ''
 
 /*
@@ -82,6 +83,12 @@ class Match {
       return this.currentTurn
     }
 
+    // continue turn for same player if their coin just reached its end
+    if (_coinJustReachedEnd) {
+      _coinJustReachedEnd = true
+      return this.currentTurn
+    }
+
     // continue turn for same player if they rolled a 6
     if (this.lastRoll === 6) {
       return this.currentTurn
@@ -123,6 +130,11 @@ class Match {
     console.log('cells', cells)
 
     players[playerId].updateCoinPosition(coinId, newPosition)
+  }
+
+  coinReachedEnd (playerId, coinId) {
+    _coinJustReachedEnd = true
+    players[playerId].coinReachedEnd(coinId)
   }
 
   // try to eat enemy coin; if eaten, return coin details
