@@ -136,7 +136,8 @@ function _onConnection (client) {
       const { playerId, coinId } = enemyCoinEaten
       io.in(matchId).emit('ENEMY_COIN_EATEN', {
         coin: enemyCoinEaten,
-        position: match.getCoinHomePosition(playerId, coinId)
+        position: match.getCoinHomePosition(playerId, coinId),
+        coinPositionOld: coinPosition
       })
     }
 
