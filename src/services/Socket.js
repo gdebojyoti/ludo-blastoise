@@ -7,53 +7,118 @@ module.exports = function (server) {
 
 const Match = require('../models/Match')
 
-const matches = []
-const matchId = 'M31291' // some random match ID
-
-matches[matchId] = new Match()
+const matches = {} // list of all matches - @TODO: this should be in DB
 
 function _onConnection (client) {
   // console.log('new connection...', client.id)
-  const match = matches[matchId]
+
   let playerId = 'noid'
   let playerName = 'noname'
+  let matchId = ''
+  let match
 
-  // add client to room (room = match; uniquely identified by match ID)
-  client.join(matchId)
+  client.on('HOST_MATCH', ({ playerId: name }) => {
+    playerId = name // ID of current player (client)
+    playerName = name
+    if (!playerId) {
+      return
+    }
+
+    // generate new match ID, and add it to list of all matches
+    matchId = `M31291P${Object.keys(matches).length}` // some random match ID
+    matches[matchId] = new Match(playerId)
+    match = matches[matchId] // retrieve match details by ID
+
+    console.log(`${playerId} hosted ${matchId}`)
+
+    // add client to room (room = match; uniquely identified by match ID)
+    client.join(matchId)
+
+    client.emit('CLIENT_JOINED', {
+      matchId
+    })
+  })
 
   // when a new player joins, inform everyone
-  client.on('JOIN_MATCH', ({ name, home }) => {
+  client.on('JOIN_MATCH', ({ playerId: name, matchId }) => {
     // TODO: name is being used as player ID for now; rectify this; playerId should be unique
     playerId = name // ID of current player (client)
     playerName = name
-    if (!name) {
+    if (!playerId || !matchId) {
       return
     }
+
+    match = matches[matchId] // retrieve match details by ID
+    if (!match) {
+      client.emit('MATCH_NOT_FOUND', {
+        matches // @TODO: Temp; remove this
+      })
+      return
+    }
+
+    console.log(`${playerId} joined ${matchId}`)
+
+    let dataProps = {} // additional match data to be sent to client
 
     // if player already exists in current match
-    if (match.checkForPlayer(playerId)) {
-      // send all latest match data to player
-      client.emit('LATEST_MATCH_DATA', {
+    const playerDetails = match.getPlayerDetails(playerId)
+    if (playerDetails) {
+      dataProps = {
         playerId,
-        players: match.getAllPlayers(),
-        matchId,
         name,
-        home
-      })
+        home: playerDetails.home
+      }
 
-      // exit
+      // add client to room (room = match; uniquely identified by match ID)
+      client.join(matchId)
+
+      console.log('already logged in', playerDetails)
+    }
+
+    // send all latest match data to player
+    client.emit('LATEST_MATCH_DATA', {
+      players: match.getAllPlayers(),
+      status: match.getStatus(),
+      matchId,
+      host: match.getHost(),
+      ...dataProps
+    })
+  })
+
+  client.on('SELECT_COLOR', ({ playerId, matchId, color }) => {
+    // exit if no match found
+    if (!match) { return }
+    // exit if player already exists in current match
+    if (match.checkForPlayer(playerId)) {
       return
     }
+    onPlayerEnter(matchId, playerId, color)
+  })
+
+  // when player hosts/ joins
+  const onPlayerEnter = (matchId, name, home) => {
+    console.log('matchId, name, home', matchId, name, home)
+    match = matches[matchId] // retrieve match details by ID
+
+    // exit if match is not found
+    if (!match) {
+      console.error('Match not found!', matches, matchId)
+      return
+    }
+
+    // // add client to room (room = match; uniquely identified by match ID)
+    // client.join(matchId)
 
     // add player to current match
     match.addPlayer(playerId, name, home)
 
-    console.log(playerId, 'has joined', home)
+    console.log(playerId, 'has joined')
 
     // send all latest match data to player
     client.emit('LATEST_MATCH_DATA', {
       playerId,
       players: match.getAllPlayers(),
+      status: match.getStatus(),
       matchId,
       name,
       home
@@ -66,7 +131,7 @@ function _onConnection (client) {
       name,
       home
     })
-  })
+  }
 
   // when client requests to roll dice
   client.on('TRIGGER_DICE_ROLL', (number) => {

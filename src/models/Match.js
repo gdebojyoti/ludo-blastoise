@@ -7,12 +7,13 @@ const { getDiceRollNumber, getHomeId, getCoinIndex } = require('../utilities/gen
  */
 
 class Match {
-  constructor () {
+  constructor (id) {
     this.turns = [] // list of player IDs in order of their turn (red -> blue -> yellow -> green)
     this.currentTurn = 0
     this.status = matchStatus.PREMATCH
     this.lastRoll = 0 // value of previous dice roll; roll = spaces by which a coin will move
     this.isDiceRolled = false // whether or not current player already rolled the dice; prevents multiple dice rolls
+    this.hostId = id // ID of host player; needed to start match
 
     /*
      * Private members
@@ -26,8 +27,16 @@ class Match {
     // this._hostPlayerId = ''
   }
 
+  getHost () {
+    return this.hostId
+  }
+
   getAllPlayers () {
     return this._players
+  }
+
+  getStatus () {
+    return this.status
   }
 
   // cell ID in which coin currently exists
@@ -42,6 +51,11 @@ class Match {
 
   setNoSelectionPossible () {
     this._noSelectionPossible = true
+  }
+
+  // fetch details of player with ID
+  getPlayerDetails (id) {
+    return this._players[id]
   }
 
   // check if player exists in match; return true if player ID ('id') is found in 'turns'

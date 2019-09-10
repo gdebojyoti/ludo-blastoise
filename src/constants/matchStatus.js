@@ -1,5 +1,5 @@
 module.exports = {
-  PREMATCH: 'pre-match',
+  PREMATCH: 'prematch',
   ONGOING: 'ongoing',
   COMPLETED: 'completed',
   ABANDONED: 'abandoned'
