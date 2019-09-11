@@ -69,11 +69,11 @@ function _onConnection (client) {
         home: playerDetails.home
       }
 
-      // add client to room (room = match; uniquely identified by match ID)
-      client.join(matchId)
-
       console.log('already logged in', playerDetails)
     }
+
+    // add client to room (room = match; uniquely identified by match ID)
+    client.join(matchId)
 
     // send all latest match data to player
     client.emit('LATEST_MATCH_DATA', {
@@ -132,6 +132,14 @@ function _onConnection (client) {
       home
     })
   }
+
+  // when host clicks 'start match' button
+  client.on('START_MATCH', () => {
+    const started = match ? match.startMatch() : null
+    if (started) {
+      io.in(matchId).emit('MATCH_STARTED')
+    }
+  })
 
   // when client requests to roll dice
   client.on('TRIGGER_DICE_ROLL', (number) => {

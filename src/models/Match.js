@@ -38,6 +38,18 @@ class Match {
   getStatus () {
     return this.status
   }
+  setStatus (status) {
+    this.status = status
+  }
+
+  startMatch () {
+    // cannot start with < 2 players
+    if (Object.keys(this._players).length < 2) {
+      return false
+    }
+    this.setStatus(matchStatus.ONGOING)
+    return true
+  }
 
   // cell ID in which coin currently exists
   getCoinPosition (playerId, coinId) {
