@@ -13,11 +13,36 @@ function _onConnection (client) {
   // console.log('new connection...', client.id)
 
   let playerId = 'noid'
-  let playerName = 'noname'
+  let playerName = 'doe'
   let matchId = ''
-  let match
+  let match = null
 
-  client.on('HOST_MATCH', ({ playerId: name }) => {
+  // when a player disconnects, inform others
+  client.on('disconnect', function () {
+    console.log(playerId, 'has left')
+    client.in(matchId).emit('PLAYER_LEFT', {
+      playerId
+    })
+  })
+
+  client.on('HOST_MATCH', hostMatch)
+
+  // when a new player joins, inform everyone
+  client.on('JOIN_MATCH', joinMatch)
+
+  // when player chooses what color (r/b/y/g) they are going to play with
+  client.on('SELECT_COLOR', selectColor)
+
+  // when host clicks 'start match' button
+  client.on('START_MATCH', startMatch)
+
+  // when client requests to roll dice
+  client.on('TRIGGER_DICE_ROLL', triggerDiceRoll)
+
+  // when client selects the coin they want to move
+  client.on('COIN_SELECTED', coinSelected)
+
+  function hostMatch ({ playerId: name }) {
     playerId = name // ID of current player (client)
     playerName = name
     if (!playerId) {
@@ -34,13 +59,16 @@ function _onConnection (client) {
     // add client to room (room = match; uniquely identified by match ID)
     client.join(matchId)
 
+    client.emit('SET_AS_HOST', {
+      matchId
+    })
+
     client.emit('CLIENT_JOINED', {
       matchId
     })
-  })
+  }
 
-  // when a new player joins, inform everyone
-  client.on('JOIN_MATCH', ({ playerId: name, matchId }) => {
+  function joinMatch ({ playerId: name, matchId }) {
     // TODO: name is being used as player ID for now; rectify this; playerId should be unique
     playerId = name // ID of current player (client)
     playerName = name
@@ -53,6 +81,8 @@ function _onConnection (client) {
       client.emit('MATCH_NOT_FOUND', {
         matches // @TODO: Temp; remove this
       })
+      // host a match when no existing one is found
+      hostMatch({ playerId: name })
       return
     }
 
@@ -83,20 +113,16 @@ function _onConnection (client) {
       host: match.getHost(),
       ...dataProps
     })
-  })
+  }
 
-  client.on('SELECT_COLOR', ({ playerId, matchId, color }) => {
+  function selectColor ({ playerId: name, matchId, color: home }) {
     // exit if no match found
     if (!match) { return }
-    // exit if player already exists in current match
-    if (match.checkForPlayer(playerId)) {
+    // exit if player already exists in current match (i.e. they already have a color)
+    if (match.checkForPlayer(name)) {
       return
     }
-    onPlayerEnter(matchId, playerId, color)
-  })
 
-  // when player hosts/ joins
-  const onPlayerEnter = (matchId, name, home) => {
     console.log('matchId, name, home', matchId, name, home)
     match = matches[matchId] // retrieve match details by ID
 
@@ -105,9 +131,6 @@ function _onConnection (client) {
       console.error('Match not found!', matches, matchId)
       return
     }
-
-    // // add client to room (room = match; uniquely identified by match ID)
-    // client.join(matchId)
 
     // add player to current match
     match.addPlayer(playerId, name, home)
@@ -133,16 +156,18 @@ function _onConnection (client) {
     })
   }
 
-  // when host clicks 'start match' button
-  client.on('START_MATCH', () => {
+  function startMatch () {
     const started = match ? match.startMatch() : null
     if (started) {
       io.in(matchId).emit('MATCH_STARTED')
     }
-  })
+  }
 
-  // when client requests to roll dice
-  client.on('TRIGGER_DICE_ROLL', (number) => {
+  function triggerDiceRoll (number) {
+    if (!match) {
+      return
+    }
+
     // exit if it is not client's turn
     if (!match.checkIfPlayersTurn(playerId)) {
       return
@@ -177,10 +202,13 @@ function _onConnection (client) {
         playerId: match.getNextTurn()
       })
     }
-  })
+  }
 
-  // when client selects the coin they want to move
-  client.on('COIN_SELECTED', ({ coinId }) => {
+  function coinSelected ({ coinId }) {
+    if (!match) {
+      return
+    }
+
     // exit if it is not client's turn
     if (!match.checkIfPlayersTurn(playerId)) {
       return
@@ -237,13 +265,5 @@ function _onConnection (client) {
         playerId: match.getNextTurn()
       })
     }
-  })
-
-  // when a player disconnects, inform others
-  client.on('disconnect', function () {
-    console.log(playerId, 'has left')
-    client.in(matchId).emit('PLAYER_LEFT', {
-      playerId
-    })
-  })
+  }
 }
