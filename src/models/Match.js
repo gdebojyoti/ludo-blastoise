@@ -9,7 +9,7 @@ const { getDiceRollNumber, getHomeId, getCoinIndex } = require('../utilities/gen
 class Match {
   constructor (id) {
     this.turns = [] // list of player IDs in order of their turn (red -> blue -> yellow -> green)
-    this.currentTurn = 0
+    this.currentTurn = ''
     this.status = matchStatus.PREMATCH
     this.lastRoll = 0 // value of previous dice roll; roll = spaces by which a coin will move
     this.isDiceRolled = false // whether or not current player already rolled the dice; prevents multiple dice rolls

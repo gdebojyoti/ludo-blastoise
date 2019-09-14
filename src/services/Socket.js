@@ -54,7 +54,7 @@ function _onConnection (client) {
     matches[matchId] = new Match(playerId)
     match = matches[matchId] // retrieve match details by ID
 
-    console.log(`${playerId} hosted ${matchId}`)
+    console.log(`${playerId} hosted ${matchId}. Full details are`, match)
 
     // add client to room (room = match; uniquely identified by match ID)
     client.join(matchId)
@@ -68,15 +68,15 @@ function _onConnection (client) {
     })
   }
 
-  function joinMatch ({ playerId: name, matchId }) {
+  function joinMatch ({ playerId: name, matchId: matchIdOld }) {
     // TODO: name is being used as player ID for now; rectify this; playerId should be unique
     playerId = name // ID of current player (client)
     playerName = name
-    if (!playerId || !matchId) {
+    if (!playerId || !matchIdOld) {
       return
     }
 
-    match = matches[matchId] // retrieve match details by ID
+    match = matches[matchIdOld] // retrieve match details by ID
     if (!match) {
       client.emit('MATCH_NOT_FOUND', {
         matches // @TODO: Temp; remove this
@@ -85,6 +85,8 @@ function _onConnection (client) {
       hostMatch({ playerId: name })
       return
     }
+
+    matchId = matchIdOld
 
     console.log(`${playerId} joined ${matchId}`)
 
@@ -115,50 +117,46 @@ function _onConnection (client) {
     })
   }
 
-  function selectColor ({ playerId: name, matchId, color: home }) {
+  function selectColor ({ color: home }) {
     // exit if no match found
-    if (!match) { return }
-    // exit if player already exists in current match (i.e. they already have a color)
-    if (match.checkForPlayer(name)) {
-      return
-    }
-
-    console.log('matchId, name, home', matchId, name, home)
-    match = matches[matchId] // retrieve match details by ID
-
-    // exit if match is not found
     if (!match) {
       console.error('Match not found!', matches, matchId)
       return
     }
+    // exit if player already exists in current match (i.e. they already have a color)
+    if (match.checkForPlayer(playerName)) {
+      return
+    }
+
+    console.log('matchId, name, home', matchId, playerName, home)
 
     // add player to current match
-    match.addPlayer(playerId, name, home)
+    match.addPlayer(playerId, playerName, home)
 
     console.log(playerId, 'has joined')
 
-    // send all latest match data to player
+    // send all latest match data to current player
     client.emit('LATEST_MATCH_DATA', {
-      playerId,
+      playerId, // TODO: remove
       players: match.getAllPlayers(),
-      status: match.getStatus(),
-      matchId,
-      name,
+      status: match.getStatus(), // TODO: remove
+      matchId, // TODO: remove
+      name: playerName, // TODO: remove
       home
     })
 
     // send new joinee details to others
     client.to(matchId).emit('PLAYER_JOINED', {
-      matchId,
+      matchId, // TODO: remove
       id: playerId,
-      name,
+      name: playerName,
       home
     })
   }
 
   function startMatch () {
-    const started = match ? match.startMatch() : null
-    if (started) {
+    const success = match ? match.startMatch() : null
+    if (success) {
       io.in(matchId).emit('MATCH_STARTED')
     }
   }
@@ -180,7 +178,7 @@ function _onConnection (client) {
 
     io.in(matchId).emit('DICE_ROLLED', {
       playerId,
-      name: playerName,
+      name: playerName, // TODO: remove
       roll: match.getDiceRollNumber(number)
     })
 
