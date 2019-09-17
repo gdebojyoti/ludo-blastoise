@@ -1,8 +1,34 @@
 let io
+const db = {
+  players: null,
+  matches: null,
+  currentMatches: null
+}
 
 module.exports = function (server) {
-  io = require('socket.io')(server)
-  io.on('connection', _onConnection)
+  const mongo = require('mongodb').MongoClient
+  const url = 'mongodb://meowmeow:1vysaur@ds014808.mlab.com:14808/ludo'
+  mongo.connect(url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }, (err, client) => {
+    if (err) {
+      console.error('Mongo connection failed', err)
+      return
+    }
+    const database = client.db('ludo')
+
+    db.players = database.collection('players')
+    db.matches = database.collection('matches')
+    db.currentMatches = database.collection('currentMatches')
+
+    console.log('Connected to DB. Collections retrieved!')
+
+    io = require('socket.io')(server)
+    io.on('connection', _onConnection)
+
+    console.log('Socket opened. Listening...')
+  })
 }
 
 const Match = require('../models/Match')
@@ -66,6 +92,8 @@ function _onConnection (client) {
     client.emit('CLIENT_JOINED', {
       matchId
     })
+
+    updateMatchStateToDb()
   }
 
   function joinMatch ({ playerId: name, matchId: matchIdOld }) {
@@ -263,5 +291,23 @@ function _onConnection (client) {
         playerId: match.getNextTurn()
       })
     }
+  }
+
+  // save match's current state to database
+  function updateMatchStateToDb () {
+    // exit if match details are missing
+    if (!matchId || !match) {
+      console.log('Exiting.. Match details missing!')
+      return
+    }
+    // exit if DB connection is busted
+    if (!db || !db.currentMatches) {
+      console.log('Exiting.. DB issues. Check connection & collections!')
+      return
+    }
+    // update match details in DB for matchID
+    db.currentMatches.updateOne({id: matchId}, {'$set': match.getDetails()}, {upsert: true})
+      .then(() => console.log('Match details saved to DB!'))
+      .catch(err => console.log('Could not update match details in DB!', err))
   }
 }
