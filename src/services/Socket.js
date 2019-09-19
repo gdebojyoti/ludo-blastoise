@@ -93,6 +93,12 @@ function _onConnection (client) {
       matchId
     })
 
+    // send all latest match data to player
+    client.emit('LATEST_MATCH_DATA', {
+      ...match.getDetails(),
+      id: matchId
+    })
+
     updateMatchStateToDb()
   }
 
@@ -137,10 +143,8 @@ function _onConnection (client) {
 
     // send all latest match data to player
     client.emit('LATEST_MATCH_DATA', {
-      players: match.getAllPlayers(),
-      status: match.getStatus(),
-      matchId,
-      host: match.getHost(),
+      ...match.getDetails(),
+      id: matchId,
       ...dataProps
     })
   }
@@ -165,10 +169,9 @@ function _onConnection (client) {
 
     // send all latest match data to current player
     client.emit('LATEST_MATCH_DATA', {
+      ...match.getDetails(),
+      id: matchId, // TODO: remove
       playerId, // TODO: remove
-      players: match.getAllPlayers(),
-      status: match.getStatus(), // TODO: remove
-      matchId, // TODO: remove
       name: playerName, // TODO: remove
       home
     })
@@ -185,7 +188,11 @@ function _onConnection (client) {
   function startMatch () {
     const success = match ? match.startMatch() : null
     if (success) {
-      io.in(matchId).emit('MATCH_STARTED')
+      // send all latest match data to all players
+      io.in(matchId).emit('LATEST_MATCH_DATA', {
+        ...match.getDetails(),
+        id: matchId
+      })
     }
   }
 
@@ -287,9 +294,11 @@ function _onConnection (client) {
         winner: playerId
       })
     } else {
-      io.in(matchId).emit('SET_NEXT_TURN', {
-        playerId: match.getNextTurn()
-      })
+      setTimeout(() => {
+        io.in(matchId).emit('SET_NEXT_TURN', {
+          playerId: match.getNextTurn()
+        })
+      }, 500)
     }
   }
 
