@@ -27,6 +27,24 @@ class Match {
     // this._hostPlayerId = ''
   }
 
+  // get all match details (to save in DB & communicate to client)
+  getDetails () {
+    return {
+      isDummy: true,
+      turns: this.turns,
+      currentTurn: this.currentTurn,
+      status: this.status,
+      lastRoll: this.lastRoll,
+      isDiceRolled: this.isDiceRolled,
+      hostId: this.hostId,
+      cells: this._cells,
+      players: this._players,
+      didEatEnemyCoin: this._didEatEnemyCoin,
+      coinJustReachedEnd: this._coinJustReachedEnd,
+      noSelectionPossible: this._noSelectionPossible
+    }
+  }
+
   getHost () {
     return this.hostId
   }

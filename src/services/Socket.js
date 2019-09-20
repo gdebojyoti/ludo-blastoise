@@ -1,8 +1,34 @@
 let io
+const db = {
+  players: null,
+  matches: null,
+  currentMatches: null
+}
 
 module.exports = function (server) {
-  io = require('socket.io')(server)
-  io.on('connection', _onConnection)
+  const mongo = require('mongodb').MongoClient
+  const url = 'mongodb://meowmeow:1vysaur@ds014808.mlab.com:14808/ludo'
+  mongo.connect(url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }, (err, client) => {
+    if (err) {
+      console.error('Mongo connection failed', err)
+      return
+    }
+    const database = client.db('ludo')
+
+    db.players = database.collection('players')
+    db.matches = database.collection('matches')
+    db.currentMatches = database.collection('currentMatches')
+
+    console.log('Connected to DB. Collections retrieved!')
+
+    io = require('socket.io')(server)
+    io.on('connection', _onConnection)
+
+    console.log('Socket opened. Listening...')
+  })
 }
 
 const Match = require('../models/Match')
@@ -66,6 +92,14 @@ function _onConnection (client) {
     client.emit('CLIENT_JOINED', {
       matchId
     })
+
+    // send all latest match data to player
+    client.emit('LATEST_MATCH_DATA', {
+      ...match.getDetails(),
+      id: matchId
+    })
+
+    updateMatchStateToDb()
   }
 
   function joinMatch ({ playerId: name, matchId: matchIdOld }) {
@@ -109,12 +143,12 @@ function _onConnection (client) {
 
     // send all latest match data to player
     client.emit('LATEST_MATCH_DATA', {
-      players: match.getAllPlayers(),
-      status: match.getStatus(),
-      matchId,
-      host: match.getHost(),
+      ...match.getDetails(),
+      id: matchId,
       ...dataProps
     })
+
+    updateMatchStateToDb()
   }
 
   function selectColor ({ color: home }) {
@@ -137,10 +171,9 @@ function _onConnection (client) {
 
     // send all latest match data to current player
     client.emit('LATEST_MATCH_DATA', {
+      ...match.getDetails(),
+      id: matchId, // TODO: remove
       playerId, // TODO: remove
-      players: match.getAllPlayers(),
-      status: match.getStatus(), // TODO: remove
-      matchId, // TODO: remove
       name: playerName, // TODO: remove
       home
     })
@@ -152,12 +185,20 @@ function _onConnection (client) {
       name: playerName,
       home
     })
+
+    updateMatchStateToDb()
   }
 
   function startMatch () {
     const success = match ? match.startMatch() : null
     if (success) {
-      io.in(matchId).emit('MATCH_STARTED')
+      // send all latest match data to all players
+      io.in(matchId).emit('LATEST_MATCH_DATA', {
+        ...match.getDetails(),
+        id: matchId
+      })
+
+      updateMatchStateToDb()
     }
   }
 
@@ -200,6 +241,8 @@ function _onConnection (client) {
         playerId: match.getNextTurn()
       })
     }
+
+    updateMatchStateToDb()
   }
 
   function coinSelected ({ coinId }) {
@@ -259,9 +302,31 @@ function _onConnection (client) {
         winner: playerId
       })
     } else {
-      io.in(matchId).emit('SET_NEXT_TURN', {
-        playerId: match.getNextTurn()
-      })
+      setTimeout(() => {
+        io.in(matchId).emit('SET_NEXT_TURN', {
+          playerId: match.getNextTurn()
+        })
+      }, 500)
     }
+
+    updateMatchStateToDb()
+  }
+
+  // save match's current state to database
+  function updateMatchStateToDb () {
+    // exit if match details are missing
+    if (!matchId || !match) {
+      console.log('Exiting.. Match details missing!')
+      return
+    }
+    // exit if DB connection is busted
+    if (!db || !db.currentMatches) {
+      console.log('Exiting.. DB issues. Check connection & collections!')
+      return
+    }
+    // update match details in DB for matchID
+    db.currentMatches.updateOne({id: matchId}, {'$set': match.getDetails()}, {upsert: true})
+      .then(() => console.log('Match details saved to DB!'))
+      .catch(err => console.log('Could not update match details in DB!', err))
   }
 }
