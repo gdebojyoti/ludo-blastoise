@@ -147,6 +147,8 @@ function _onConnection (client) {
       id: matchId,
       ...dataProps
     })
+
+    updateMatchStateToDb()
   }
 
   function selectColor ({ color: home }) {
@@ -183,6 +185,8 @@ function _onConnection (client) {
       name: playerName,
       home
     })
+
+    updateMatchStateToDb()
   }
 
   function startMatch () {
@@ -193,6 +197,8 @@ function _onConnection (client) {
         ...match.getDetails(),
         id: matchId
       })
+
+      updateMatchStateToDb()
     }
   }
 
@@ -235,6 +241,8 @@ function _onConnection (client) {
         playerId: match.getNextTurn()
       })
     }
+
+    updateMatchStateToDb()
   }
 
   function coinSelected ({ coinId }) {
@@ -300,6 +308,8 @@ function _onConnection (client) {
         })
       }, 500)
     }
+
+    updateMatchStateToDb()
   }
 
   // save match's current state to database
