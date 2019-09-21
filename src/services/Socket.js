@@ -255,6 +255,11 @@ function _onConnection (client) {
       return
     }
 
+    // exit if dice has not been rolled (prevents using last roll value)
+    if (!match.hasAlreadyRolled()) {
+      return
+    }
+
     const coinPath = match.getCoinPath(playerId, coinId)
 
     // choice of coin is invalid if moves count = 0

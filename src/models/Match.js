@@ -63,7 +63,7 @@ class Match {
   startMatch () {
     // cannot start with < 2 players
     if (Object.keys(this._players).length < 2) {
-      return false
+      // return false
     }
     this.setStatus(matchStatus.ONGOING)
     return true
